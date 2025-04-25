@@ -1,0 +1,44 @@
+
+services:
+  db:
+    image: mysql:latest
+    container_name: mysql_container
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: mehdi234
+      MYSQL_DATABASE: instagram1
+      MYSQL_USER: instagram_user
+      MYSQL_PASSWORD: ali234
+    volumes:
+      - mysql_data:/var/lib/mysql
+    ports:
+      - "3308:3306"
+    networks:
+      - mynetwork
+
+  web:
+    build: .
+    restart: always
+    volumes:
+      - .:/app
+    ports:
+      - "8020:8003"
+    image: instagram
+    container_name: instagram_container
+    command: ["/wait-for-db.sh", "python", "manage.py", "runserver", "0.0.0.0:8003"]
+    depends_on:
+      - db
+    environment:
+      MYSQL_ROOT_PASSWORD: mehdi234
+      MYSQL_DATABASE: instagram1
+      MYSQL_USER: instagram_user
+      MYSQL_PASSWORD: ali234
+    networks:
+      - mynetwork
+
+networks:
+  mynetwork:
+    driver: bridge
+
+volumes:
+  mysql_data: {}
