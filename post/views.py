@@ -19,46 +19,26 @@ from .serializer import PostSerializer, CommentSerializer, LikeSerializer, Comme
 from django.contrib.auth.models import User
 from django.shortcuts import get_object_or_404
 
+from .tasks import send_post_notification_email
+
 
 class PostView(ModelViewSet):
+    """قابلیت اجرای 4 متود اصلی"""
+
     serializer_class = PostSerializer
     authentication_classes = [CustomTokenAuthentication]
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        return Post.objects.filter(is_active=True,is_public=True)
+        return Post.objects.filter(is_active=True,is_public=True) # فقظ پست هایی که فعال و عمومی باشن
 
     def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
+        post = serializer.save(user=self.request.user)
 
-# class PostView(APIView):
-#     authentication_classes = [CustomTokenAuthentication]
-#     permission_classes = [IsAuthenticated]
-#
-#
-#     def post(self,request):
-#         serializer = PostSerializer(data=request.data)
-#         if serializer.is_valid(raise_exception=True):
-#             serializer.save(user=request.user)
-#             return Response('post created',status=status.HTTP_201_CREATED)
-#         else:
-#             return Response(status=status.HTTP_400_BAD_REQUEST)
-#
-#
-# class PostGetView(APIView):
-#     authentication_classes = [CustomTokenAuthentication]
-#     permission_classes = [IsAuthenticated]
-#
-#     def get(self,request,pk):
-#         try:
-#             post = Post.objects.get(pk=pk)
-#         except Post.DoesNotExist:
-#             return Response(status=status.HTTP_404_NOT_FOUND)
-#         serializer = PostSerializer(post)
-#         return Response(serializer.data,status=status.HTTP_200_OK)
 
 
 class MyPost(APIView):
+    """دیدن پست های خود کاربر"""
     authentication_classes = [CustomTokenAuthentication]
     permission_classes = [IsAuthenticated]
 
@@ -72,17 +52,19 @@ class MyPost(APIView):
 
 
 class Search(APIView):
+    """سرچ در بین اسم کاربر ها و عنوان پست ها """
     authentication_classes = [CustomTokenAuthentication]
     permission_classes = [IsAuthenticated]
 
     def post(self,request):
         search = request.data.get('search')
-        search = Post.objects.filter(Q(user__id__icontains=search) | Q(title__icontains=search))
+        search = Post.objects.filter(Q(user__username__icontains=search) | Q(title__icontains=search))
         serializer = PostSerializer(search,many=True)
         return Response(serializer.data,status=status.HTTP_200_OK)
 
 
 class CommentView(APIView):
+    """کامنت برای پست مورد نظر"""
     authentication_classes = [CustomTokenAuthentication]
     permission_classes = [IsAuthenticated]
 
@@ -109,6 +91,7 @@ class CommentView(APIView):
 
 
 class LikeView(APIView):
+    """لایک یک پست"""
     authentication_classes = [CustomTokenAuthentication]
     permission_classes = [IsAuthenticated]
 
@@ -134,6 +117,7 @@ class LikeView(APIView):
 
 
 class CommentReplayView(APIView):
+    """ریپلای به یک کامنت"""
     authentication_classes = [CustomTokenAuthentication]
     permission_classes = [IsAuthenticated]
 
@@ -164,6 +148,7 @@ class CommentReplayView(APIView):
 
 
 class CategoryView(viewsets.ReadOnlyModelViewSet):
+    """ویو کتگوری برای کاربران عادی"""
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
 
@@ -178,13 +163,15 @@ class CategoryView(viewsets.ReadOnlyModelViewSet):
 #     #     match self.action:
 #     #         case 'create':
 #     #             return CategoryAdminSerializer
-@method_decorator(csrf_exempt, name='dispatch')
+
+# @method_decorator(csrf_exempt, name='dispatch')
 class CategoryAdminView(APIView):
-    # permission_classes = [IsAuthenticated]
+    """ویو کتگوری مخصوص ادمین"""
+    permission_classes = [IsAdminUser]
     # authentication_classes = [CustomTokenAuthentication]
 
     def get(self,request):
-        categories = Category.get_root_nodes()
+        categories = Category.get_root_nodes() # دسته هایی رو میگیریم که هیچ والدی ندارند
         serializer = CategoryAdminGetSerializer(categories,many=True)
         return Response(serializer.data,status=status.HTTP_200_OK)
 
@@ -194,9 +181,10 @@ class CategoryAdminView(APIView):
         serializer.save()
         return Response({'detail':'category created!'},status=status.HTTP_200_OK)
 
-@method_decorator(csrf_exempt, name='dispatch')
+# @method_decorator(csrf_exempt, name='dispatch')
 class CategoryAdminView2(APIView):
-    # permission_classes = [IsAuthenticated]
+    """ اپدیت کتگوری و دیدن شاخه خاص  وپاک کردن یک شاخه خاص"""
+    permission_classes = [IsAdminUser]
     # authentication_classes = [CustomTokenAuthentication]
 
     def get(self, request, pk):
@@ -217,10 +205,9 @@ class CategoryAdminView2(APIView):
         category.delete()
         return Response({'detail':'category deleted'},status=status.HTTP_200_OK)
 
-from django.utils import timezone
-from datetime import timedelta
 
 class StoryView(APIView):
+    """استوری 24 ساعته"""
     authentication_classes = [CustomTokenAuthentication]
     permission_classes = [IsAuthenticated]
 
@@ -232,7 +219,7 @@ class StoryView(APIView):
 
     def get(self, request):
         timezon = timezone.now() - timedelta(hours=24)
-        qs = Story.objects.filter(created_at__gte=timezon).order_by('-created_at')
+        qs = Story.objects.filter(created_at__gte=timezon).order_by('-created_at') # فیلتر استوری هایی که زمان ساختشون بزرگتر 24 ساعت پیشه
         serializer = StorySerializer(qs, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -245,6 +232,7 @@ class BookmarkView(APIView):
     def post(self, request, pk):
         """
         ذخیره‌ی یک پست
+        یا حذف کردنش
         POST /api/bookmarks/{post_id}/
         """
         try:

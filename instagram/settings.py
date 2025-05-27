@@ -50,6 +50,7 @@ INSTALLED_APPS = [
     'treebeard',
     'rest_framework',
     'friendship',
+    'channels'
 ]
 
 MIDDLEWARE = [
@@ -114,20 +115,25 @@ REST_FRAMEWORK = {
 
 # CSRF_COOKIE_HTTPONLY = True
 
-WSGI_APPLICATION = 'instagram.wsgi.application'
+ASGI_APPLICATION = 'instagram.asgi.application'
 
 
+# تنظیمات Redis برای Celery
+CELERY_BROKER_URL = 'redis://localhost:6379/0'  # یا آدرس Redis خودت
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'instagram1',  # نام دیتابیس
-        'USER': 'instagram_user',        # کاربر root
-        'PASSWORD': 'ali234',  # پسورد
-        'HOST': 'db',  # نام سرویس MySQL در Docker Compose
-        'PORT': '3306',  # پورت MySQL داخل کانتینر
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'mydatabase',
+        'USER': 'myuser',
+        'PASSWORD': 'mypassword',
+        'HOST': 'db',  # نام سرویس در فایل docker-compose.yml
+        'PORT': '5432',
     }
 }
 

@@ -4,14 +4,6 @@ from rest_framework.generics import get_object_or_404
 from .models import Comment, CommentReplay, Post, Like, Category, Story
 
 
-# class PostSerializer(serializers.ModelSerializer):
-#
-#     class Meta:
-#         model = Post
-#         exclude = ('is_active','is_public')
-#         extra_kwargs = {
-#             'user':{'read_only':True}
-#         }
 class PostSerializer(serializers.ModelSerializer):
 
     class Meta:
@@ -53,20 +45,23 @@ class CommentReplaySerializer(serializers.ModelSerializer):
             'comment': {'read_only': True}
         }
 
+
 class ChildCategory23Serializer(serializers.ModelSerializer):
+    """"""
     class Meta:
         model = Category
-        # در اینجا فقط فیلدهای مورد نیاز برای فرزند را می‌آوری
+        # در اینجا فقط فیلدهای مورد نیاز برای فرزند را می‌آوریم
         fields = ['id', 'title', 'description', 'slug']
 
 class CategorySerializer(serializers.ModelSerializer):
+    """سریالایزر کتگوری برای کاربران عادی"""
 
     children = serializers.SerializerMethodField()
 
     def get_children(self, obj):
         if obj.is_root():
 
-            children = obj.get_children()
+            children = obj.get_children() # اگر شی روت باشه(یعنی شبیه ریشه یک درخت) بچه هاش رو برمیگردونیم
             return ChildCategory23Serializer(children, many=True).data
         return []
 
@@ -82,7 +77,33 @@ class CategorySerializer(serializers.ModelSerializer):
         fields = ('title', 'description', 'slug', 'children')
 
 
+class CategorySerializer(serializers.ModelSerializer):
+
+    children = serializers.SerializerMethodField
+
+    def get_children(self, obj):
+        if obj.is_root():
+            children = obj.get_children()
+            return ChildCategory23Serializer(children, many=True).data
+        return []
+
+
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        if not instance.is_root():
+            representation.pop('children', None)
+        return representation
+    
+    class Meta:
+        model = Category
+        fields = ('title', 'description', 'slug', 'children')
+
+
+
+
+
 class CategoryAdminPostSerializer(serializers.ModelSerializer):
+    """برای ساخت کتگوری"""
     parent = serializers.IntegerField(required=False, allow_null=True)
 
     class Meta:
@@ -90,13 +111,15 @@ class CategoryAdminPostSerializer(serializers.ModelSerializer):
         fields = ('id', 'title', 'description', 'is_public', 'slug', 'parent')
 
     def create(self, validated_data):
-        parent = validated_data.pop('parent', None)
+        parent = validated_data.pop('parent', None) # با توجه به اینکه پرنت مقدار داره یا نه حدس میزنیم کتگوری فرزنده یا والده
         if parent is None:
-            instance = Category.add_root(**validated_data)
+            instance = Category.add_root(**validated_data) # اگه برای هیچ والد مشخصی نبود یعنی یک والد جدیده
         else:
-            parent_node = get_object_or_404(Category, pk=parent)
-            instance =  parent_node.add_child(**validated_data)
+            parent_node = get_object_or_404(Category, pk=parent) #  والد رو میگیریم
+            instance =  parent_node.add_child(**validated_data) # یک فرزند به ان اضافه میکنیم
         return instance
+
+
 
 class AdminChildCategorySerializer(serializers.ModelSerializer):
     class Meta:
@@ -109,13 +132,14 @@ class CategoryAdminGetSerializer(serializers.ModelSerializer):
 
     def get_children(self, obj):
         children = obj.get_children()
-        return CategoryAdminGetSerializer(children, many=True).data
+        return CategoryAdminGetSerializer(children, many=True).data # بچه هارو تو بخش ادمین اینطور نشون میدیم(کل فیلد هارو برمیگردونیم)
 
     class Meta:
         model = Category
         fields = '__all__'
 
 class CategoryAdminUpdateSerializer(serializers.ModelSerializer):
+    """برای اپدیت فیلد های کتگوری"""
 
     class Meta:
         model = Category
@@ -123,6 +147,7 @@ class CategoryAdminUpdateSerializer(serializers.ModelSerializer):
 
 
 class StorySerializer(serializers.ModelSerializer):
+    """سریالایزر برای استوری 24 ساعته"""
 
     class Meta:
         model = Story

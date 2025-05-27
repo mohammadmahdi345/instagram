@@ -3,6 +3,8 @@ from datetime import timedelta
 from django.db import models
 from django.conf import settings
 from django.db.models.signals import post_save
+from django.dispatch import receiver
+from django.utils import timezone
 from treebeard.mp_tree import MP_Node
 
 from user.models import User, Profile, CreatedTime
@@ -42,12 +44,22 @@ class Post(CreatedTime):
 
     def __str__(self):
         return self.title
+
 def update_post(sender, instance, created, **kwargs):
     if created:
         profile = Profile.objects.get(user=instance.user)
         profile.post.add(instance)
         profile.save()
 post_save.connect(update_post, sender=Post)
+
+
+@receiver(post_save, sender=Post)
+def post_add_notification(sender, instance, created, **kwargs):
+    if created:
+        from .tasks import send_post_notification_email
+        send_post_notification_email.delay(user_id=instance.user.id, post_id=instance.pk)
+
+
 
 
 
@@ -95,12 +107,12 @@ class Like(CreatedTime):
         verbose_name = 'Like'
         verbose_name_plural = 'Likes'
 
-from django.utils import timezone
+
 
 class Story(CreatedTime):
     user = models.ForeignKey('user.User', on_delete=models.CASCADE, related_name='stories')
     story = models.FileField(upload_to='stories/story')
-    # created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         ordering = ['-created_at']
@@ -109,3 +121,10 @@ class Story(CreatedTime):
     def is_expired(self):
         # طول عمر 24 ساعت
         return timezone.now() > self.created_at + timedelta(hours=24)
+
+@receiver(post_save, sender=Story)
+def post_add_notification(sender, instance, created, **kwargs):
+    if created:
+        from .tasks import send_story_notification_email
+        send_story_notification_email.delay(user_id=instance.user.id)
+

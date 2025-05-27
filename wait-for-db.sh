@@ -1,11 +1,14 @@
-#!/bin/sh
+#!/bin/bash
+# wait-for-db.sh
 
-echo "⏳ منتظر اتصال به دیتابیس هستیم..."
+HOST=$1
+shift
+PORT=3306
 
-while ! nc -z db 3306; do
-  sleep 1
+until nc -z $HOST $PORT; do
+  echo "Waiting for database at $HOST:$PORT..."
+  sleep 2
 done
 
-echo "✅ دیتابیس در دسترسه. ادامه می‌دهیم..."
-
+echo "Database is up, running command..."
 exec "$@"

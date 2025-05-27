@@ -15,22 +15,8 @@ class RegisterSerializer(serializers.ModelSerializer):
         }
 
 
-    # phone_number = serializers.CharField(required=False, validators=[])  # حذف UniqueValidator
-    # email = serializers.EmailField(required=False, validators=[])
-    # username = serializers.CharField(required=False, validators=[])
-
-    def validate_phone_number(self, value):
-        # این فقط برای لاگین راحت‌تره
-        return value
-
-    def validate_email(self, value):
-        return value
-
-    def validate_username(self, value):
-        return value
-
-
 class PasswordRecoverySerializer(serializers.ModelSerializer):
+    """سریالایزر برای بازیابی پسورد"""
 
     class Meta:
         model = User
@@ -38,6 +24,7 @@ class PasswordRecoverySerializer(serializers.ModelSerializer):
 
 
 class UserUpdateSerializer(serializers.ModelSerializer):
+    """سریالایزر برای آپدیت اطلاعات"""
 
     class Meta:
         model = User

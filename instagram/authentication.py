@@ -5,6 +5,7 @@ from django.core.cache import cache
 from user.models import User
 
 class CustomTokenAuthentication(BaseAuthentication):
+    """احراز هویت شخصی سازی شده به دلیل استفاده از سیستم شخصی سازی شده jwt"""
     def authenticate(self, request):
         auth_header = request.headers.get('Authorization')
 

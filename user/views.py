@@ -21,34 +21,39 @@ from .serializer import RegisterSerializer, PasswordRecoverySerializer, UserUpda
 
 
 class LoginView(APIView):
+    """ لاگین کاربر با استفاده از jwt به چندین روش مختلف"""
+
     def post(self,request):
         username = request.data.get('username')
         phone_number = request.data.get('phone_number')
         email = request.data.get('email')
         password = request.data.get('password')
 
-        if not password:
+        if not password: # اگر کاربر پسورد نداده باشه مستقیم ارور میگیره
             return Response({'detail': 'enter a password'}, status=status.HTTP_400_BAD_REQUEST)
 
         user= None
-        if username:
+        if username: # اگه یوزر نیم رو داده باشه تو سیستم میگردیم دنبال فردی با این یوزرنیم و پسورد
             try:
                 user = authenticate(request,username=username,password=password)
             except User.DoesNotExist:
                 return Response({'detail':'username or password is wrong'})
-        elif phone_number:
+
+        elif phone_number: # اگه شماره تلفن رو داده باشه تو سیستم میگردیم دنبال فردی با این شماره تلفن و پسورد
             user = User.objects.filter(phone_number=phone_number).first()
-        elif email:
+
+        elif email: # اگه ایمیل رو داده باشه تو سیستم میگردیم دنبال فردی با این ایمیل و پسورد
             user = User.objects.filter(email=email).first()
-        else:
+
+        else: # اگه هیچکدومو نداده باشه ارور میگیره
             return Response({'detail': 'Enter username or phone_number or email'}, status=status.HTTP_400_BAD_REQUEST)
 
-        if user and user.check_password(password):
-            if user.is_banned == False:
+        if user and user.check_password(password): # اگه یکی از شرط های احراز هویت درست بود و پسورد هم کامل مطابفت داشت میریم مرحله بعد
+            if user.is_banned == False: # چک میکنیم کاربر بن شده یا نه
                 refresh = RefreshToken.for_user(user)
                 return Response({
                     'detail': 'login successful',
-                    'access_token': str(refresh.access_token),
+                    'access_token': str(refresh.access_token), # همه چی درست بود توکن رو بهش میدیم
                     'refresh_token': str(refresh)
                 })
             else:
@@ -70,45 +75,49 @@ def generate_unique_username():
 
 
 class RegisterView(APIView):
+    """ویو زیر هدف اصلیش ثبت نامه اما در اینجا حتی تو این بخش هم اگه شروط و بررسی ها درست باشن امکان لاگین کاربر هست"""
     def post(self, request):
         serializer = RegisterSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-
         username = serializer.validated_data.get('username')
         if not username:
-            username = generate_unique_username()
+            username = generate_unique_username() # اگه یوزرنیم نبود یه نام کاربری تصادفی با استفاده ار فانکشن بالا میسازه
 
         phone = serializer.validated_data.get('phone_number')
         email = serializer.validated_data.get('email')
         password = serializer.validated_data.get('password')
 
+        if not phone and email:
+            return Response({'detail':'please enter email or phone at least'})
+
 
         user = None
 
         if phone:
-            user = User.objects.filter(phone_number=phone).first()
+            user = User.objects.get(phone_number=phone)
         elif email:
-            user = User.objects.filter(email=email).first()
+            user = User.objects.get(email=email)
         if user:
-            if user.check_password(password):
-                if user.is_banned == False:
+            if user.check_password(password): # اگه یوزر وجود داشت و پسورد هم درست بود
+                if user.is_banned == False: # و کاربر بن نبود
                     refresh = RefreshToken.for_user(user)
                     return Response({
                         'detail': 'login successful',
-                        'access_token': str(refresh.access_token),
+                        'access_token': str(refresh.access_token), # توکن لاگین رو بهش میدیم
                         'refresh_token': str(refresh)
                     })
                 else:
                     return Response({'detail': 'you banned in past'}, status=status.HTTP_403_FORBIDDEN)
             else:
                 return Response({'detail':'password is wrong'},status=status.HTTP_401_UNAUTHORIZED)
+        # در غیر این صورت میریم برای ساخت و ثبت نام یوزر
         user = User.objects.create_user(username=username, phone_number=phone, email=email, password=password)
         refresh = RefreshToken.for_user(user)
 
         return Response({
             'detail': 'register successful',
-            'username': username,  # به کاربر اعلام کن چی براش ساختی
-            'access_token': str(refresh.access_token),
+            'username': username,
+            'access_token': str(refresh.access_token), # توکن ثبت نام
             'refresh_token': str(refresh)
         }, status=status.HTTP_201_CREATED)
 

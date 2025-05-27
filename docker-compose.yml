@@ -1,18 +1,17 @@
 
 services:
   db:
-    image: mysql:latest
-    container_name: mysql_container
-    restart: always
+    image: postgres:latest
+    container_name: my_postgres_container
     environment:
-      MYSQL_ROOT_PASSWORD: mehdi234
-      MYSQL_DATABASE: instagram1
-      MYSQL_USER: instagram_user
-      MYSQL_PASSWORD: ali234
+      POSTGRES_USER: myuser
+      POSTGRES_PASSWORD: mypassword
+      POSTGRES_DB: mydatabase
     volumes:
-      - mysql_data:/var/lib/mysql
+      - db_data:/var/lib/postgresql/data
     ports:
-      - "3308:3306"
+      - "5432:5432"
+    restart: always
     networks:
       - mynetwork
 
@@ -29,10 +28,9 @@ services:
     depends_on:
       - db
     environment:
-      MYSQL_ROOT_PASSWORD: mehdi234
-      MYSQL_DATABASE: instagram1
-      MYSQL_USER: instagram_user
-      MYSQL_PASSWORD: ali234
+      POSTGRES_USER: myuser
+      POSTGRES_PASSWORD: mypassword
+      POSTGRES_DB: mydatabase
     networks:
       - mynetwork
 
@@ -41,4 +39,4 @@ networks:
     driver: bridge
 
 volumes:
-  mysql_data: {}
+  db_data: {}

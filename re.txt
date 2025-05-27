@@ -18,5 +18,11 @@ typing_extensions==4.12.2
 tzdata==2025.1
 urllib3==2.3.0
 yarl==1.18.3
-mysqlclient==2.1
 django-treebeard==4.7.1
+pytest-django
+pytest
+celery
+redis
+psycopg2-binary
+daphne
+Uvicorn
