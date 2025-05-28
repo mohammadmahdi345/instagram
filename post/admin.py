@@ -22,6 +22,10 @@ class PostAdmin(admin.ModelAdmin):
     actions = ['enable_is_public']
     inlines = [CommentInline]
 
+    def enable_is_public(self, request, queryset):
+        queryset.update(is_public=True)
+        self.message_user(request, "Selected users have been is_public.")
+
 
 
 class CategoryAdmin(TreeAdmin):
