@@ -31,19 +31,16 @@
     cd instagram
     ```
 
-2. ایجاد و فعال‌سازی محیط مجازی:
-    ```bash
-    python -m venv venv
-    source venv/bin/activate  # برای لینوکس و مک
-    venv\Scripts\activate  # برای ویندوز
-    ```
+   
 
-3. نصب وابستگی‌ها:
-    ```bash
-    pip install -r re.txt
-    ```
+اجرای پروژه در محیط توسعه (با Docker Compose)
 
-  
+docker-compose up -d --build برای اجرای کانتینرها
+docker-compose down برای توقف کانتینرها
+docker-compose exec web pytest   اجرای تست ها با پایتست
+
+    
+
 
 6. حالا می‌تونی به پروژه دسترسی پیدا کنی:
     - آدرس: [http://localhost:8000](http://localhost:8000)
