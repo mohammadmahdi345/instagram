@@ -8,3 +8,9 @@ __pycache__/
 /migrations/
 db.sqlite3
 .env.local
+local_settings.py
+main.py
+conftest.py
+.dockerignore
+debug.log
+.editorconfig

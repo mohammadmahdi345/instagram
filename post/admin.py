@@ -22,17 +22,6 @@ class PostAdmin(admin.ModelAdmin):
     actions = ['enable_is_public']
     inlines = [CommentInline]
 
-    # def get_queryset(self, request):
-    #     qs = super().get_queryset(request)
-    #     return qs.annotate(caption_long=Length('caption'))  # ✅ استفاده از ORM تابع
-
-    # def caption_long(self, obj):
-    #     return obj.caption_long  # ❗ حواست باشه از obj.caption_long استفاده کنی، نه len(obj.caption)
-    #
-    # caption_long.short_description = 'Caption Long'
-    # caption_long.admin_order_field = 'caption_long'
-
-
 
 
 class CategoryAdmin(TreeAdmin):
